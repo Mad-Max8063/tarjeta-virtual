@@ -119,6 +119,34 @@ body::before {
   min-height: 100dvh;
 }
 
+/* Fullscreen mode for client-facing card */
+.app-container.landing-mode {
+  max-width: 100%;
+  padding: 0;
+}
+
+.app-container.landing-mode .card {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.app-container.landing-mode .card-banner {
+  border-radius: 0;
+}
+
+.app-container.landing-mode .card-body {
+  padding: 14px 20px 28px;
+}
+
+.app-container.landing-mode .btn-group {
+  padding: 0 20px;
+}
+
+.app-container.landing-mode .landing-footer {
+  padding: 20px;
+}
+
 /* ---------- View Management ---------- */
 .view {
   display: none;

@@ -13,6 +13,7 @@ function navigate() {
     // Clear container
     app.innerHTML = '';
     app.className = 'app-container';
+    app.classList.remove('landing-mode');
 
     // Parse route
     const cardMatch = path.match(/^\/card\/([A-Za-z0-9]+)$/);
@@ -56,8 +57,9 @@ function navigate() {
         });
 
     } else if (cardMatch) {
-        // — Landing mode: fetch card from Supabase —
+        // — Landing mode: fetch card from Supabase (fullscreen) —
         const cardId = cardMatch[1];
+        app.classList.add('landing-mode');
 
         app.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Cargando tarjeta...</p></div>';
 
