@@ -327,12 +327,36 @@ export function initEditor(container, onPreview) {
     }
   });
 
+  // Sync all form values from DOM into data (called before re-renders)
+  function syncFormData() {
+    FIELDS.forEach((field) => {
+      const input = container.querySelector(`#field-${field}`);
+      if (input) data[field] = input.value;
+    });
+    // Sync gallery captions from DOM
+    if (data.gallery) {
+      container.querySelectorAll('.gallery-caption-input').forEach((input) => {
+        const index = parseInt(input.dataset.index);
+        if (data.gallery[index]) {
+          if (typeof data.gallery[index] === 'string') {
+            data.gallery[index] = { src: data.gallery[index], caption: '' };
+          }
+          data.gallery[index].caption = input.value;
+        }
+      });
+    }
+    // Sync photo/cover from current data (already handled by their change events)
+  }
+
   // Gallery upload
   const galleryInput = container.querySelector('#gallery-input');
   if (galleryInput) {
     galleryInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
+
+      // Sync ALL form values before re-rendering
+      syncFormData();
 
       if (!data.gallery) data.gallery = [];
       data.gallery = data.gallery.map(item =>
@@ -353,6 +377,7 @@ export function initEditor(container, onPreview) {
   container.querySelectorAll('.gallery-remove').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
+      syncFormData();
       const index = parseInt(btn.dataset.index);
       if (!data.gallery) return;
       data.gallery.splice(index, 1);
