@@ -60,6 +60,22 @@ export async function createCard(data) {
     return card;
 }
 
+export async function updateCard(cardId, updates) {
+    const db = getClient();
+    const { data: card, error } = await db
+        .from('cards')
+        .update(updates)
+        .eq('id', cardId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating card:', error);
+        throw error;
+    }
+    return card;
+}
+
 export async function getCard(cardId) {
     const db = getClient();
     const { data: card, error } = await db

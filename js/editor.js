@@ -3,7 +3,7 @@
 // ============================================
 
 import { resizeImage, resizeBanner, resizeGalleryImage, dataUriToFile } from './utils.js';
-import { createCard, uploadImage } from './supabase.js';
+import { createCard, updateCard, uploadImage } from './supabase.js';
 
 const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website'];
 const MAX_DESC = 160;
@@ -270,21 +270,7 @@ export function initEditor(container, onPreview) {
     submitBtn.innerHTML = '<span class="spinner-sm"></span> Guardando...';
 
     try {
-      // Upload avatar if it's a data URI
-      let photoUrl = '';
-      if (data.photo && data.photo.startsWith('data:')) {
-        const photoFile = dataUriToFile(data.photo, 'avatar.jpg');
-        photoUrl = await uploadImage(photoFile, 'temp', 'avatar');
-      }
-
-      // Upload cover if it's a data URI
-      let coverUrl = '';
-      if (data.coverPhoto && data.coverPhoto.startsWith('data:')) {
-        const coverFile = dataUriToFile(data.coverPhoto, 'cover.jpg');
-        coverUrl = await uploadImage(coverFile, 'temp', 'cover');
-      }
-
-      // Create card in Supabase
+      // 1. Create card in Supabase (without images initially)
       const card = await createCard({
         name: data.name,
         profession: data.profession,
@@ -295,11 +281,33 @@ export function initEditor(container, onPreview) {
         instagram: data.instagram,
         linkedin: data.linkedin,
         website: data.website,
-        photo_url: photoUrl,
-        cover_url: coverUrl,
+        photo_url: '',
+        cover_url: '',
       });
 
-      // Upload gallery images
+      // 2. Upload avatar using the real card ID
+      let photoUrl = '';
+      if (data.photo && data.photo.startsWith('data:')) {
+        const photoFile = dataUriToFile(data.photo, 'avatar.jpg');
+        photoUrl = await uploadImage(photoFile, card.id, 'avatar');
+      }
+
+      // 3. Upload cover using the real card ID
+      let coverUrl = '';
+      if (data.coverPhoto && data.coverPhoto.startsWith('data:')) {
+        const coverFile = dataUriToFile(data.coverPhoto, 'cover.jpg');
+        coverUrl = await uploadImage(coverFile, card.id, 'cover');
+      }
+
+      // 4. Update card with image URLs if any were uploaded
+      if (photoUrl || coverUrl) {
+        const updates = {};
+        if (photoUrl) updates.photo_url = photoUrl;
+        if (coverUrl) updates.cover_url = coverUrl;
+        await updateCard(card.id, updates);
+      }
+
+      // 5. Upload gallery images
       if (data.gallery && data.gallery.length > 0) {
         const { addGalleryImage, uploadImage: upload } = await import('./supabase.js');
         for (let i = 0; i < data.gallery.length; i++) {
@@ -312,7 +320,7 @@ export function initEditor(container, onPreview) {
         }
       }
 
-      // Add Supabase IDs to data for preview
+      // 6. Set final data for preview
       data._id = card.id;
       data._editToken = card.edit_token;
       data.photo = photoUrl;
