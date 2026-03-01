@@ -113,7 +113,7 @@ function navigate() {
 }
 
 // SHA-256 hash of the admin password
-const ADMIN_HASH = 'a0f3285b07c26c0dcd2191447f391170d06b30f0577a41b72134c508ab0d04e0';
+const ADMIN_HASH = 'ca74a826607abd0b1777146954a4040b05d19dc5eb34ea07ce483b96f4bb23ef';
 
 async function hashPassword(pwd) {
     const data = new TextEncoder().encode(pwd);
