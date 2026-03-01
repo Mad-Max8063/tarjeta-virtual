@@ -2,77 +2,105 @@
 // app.js — Main router & app orchestration
 // ============================================
 
-import { decodeData } from './utils.js';
-import { initEditor } from './editor.js';
-import { renderPreview, renderLanding } from './card.js';
+import { getCard } from './supabase.js';
 
 const app = document.getElementById('app');
 
 function navigate() {
-    const hash = window.location.hash;
+    const path = window.location.pathname;
+    const search = window.location.search;
 
     // Clear container
     app.innerHTML = '';
     app.className = 'app-container';
-    if (hash.startsWith('#edit/')) {
-        // — Gallery edit mode: professional adds their work photos —
-        const encoded = hash.replace('#edit/', '');
-        const data = decodeData(encoded);
 
-        if (!data) {
-            app.innerHTML = `
-        <div style="text-align:center; padding:60px 20px;">
-          <h2 style="margin-bottom:8px;">Link inválido</h2>
-          <p style="color:var(--text-secondary);">Esta tarjeta no existe o el link está dañado.</p>
-        </div>`;
-            return;
-        }
+    // Parse route
+    const cardMatch = path.match(/^\/card\/([A-Za-z0-9]+)$/);
+    const editMatch = path.match(/^\/edit\/([A-Za-z0-9]+)$/);
 
-        const editView = document.createElement('div');
-        editView.className = 'view active';
-        app.appendChild(editView);
+    if (editMatch) {
+        // — Gallery edit mode —
+        const cardId = editMatch[1];
+        const params = new URLSearchParams(search);
+        const token = params.get('token') || '';
 
-        import('./gallery-editor.js').then((mod) => {
-            mod.renderGalleryEditor(editView, data);
+        app.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Cargando...</p></div>';
+
+        getCard(cardId).then(card => {
+            if (!card) {
+                app.innerHTML = `
+                    <div style="text-align:center; padding:60px 20px;">
+                      <h2 style="margin-bottom:8px;">Tarjeta no encontrada</h2>
+                      <p style="color:var(--text-secondary);">Esta tarjeta no existe o el link está dañado.</p>
+                    </div>`;
+                return;
+            }
+
+            if (card.edit_token !== token) {
+                app.innerHTML = `
+                    <div style="text-align:center; padding:60px 20px;">
+                      <h2 style="margin-bottom:8px;">🔒 Acceso denegado</h2>
+                      <p style="color:var(--text-secondary);">No tenés permiso para editar esta tarjeta.</p>
+                    </div>`;
+                return;
+            }
+
+            const editView = document.createElement('div');
+            editView.className = 'view active';
+            app.innerHTML = '';
+            app.appendChild(editView);
+
+            import('./gallery-editor.js').then((mod) => {
+                mod.renderGalleryEditor(editView, card);
+            });
         });
 
-    } else if (hash.startsWith('#card/')) {
-        // — Landing mode: decode data from URL —
-        const encoded = hash.replace('#card/', '');
-        const data = decodeData(encoded);
+    } else if (cardMatch) {
+        // — Landing mode: fetch card from Supabase —
+        const cardId = cardMatch[1];
 
-        if (!data) {
-            app.innerHTML = `
-        <div style="text-align:center; padding:60px 20px;">
-          <h2 style="margin-bottom:8px;">Link inválido</h2>
-          <p style="color:var(--text-secondary);">Esta tarjeta no existe o el link está dañado.</p>
-        </div>`;
-            return;
-        }
+        app.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Cargando tarjeta...</p></div>';
 
-        // Update page meta for WhatsApp preview
-        updateMeta(data);
+        getCard(cardId).then(card => {
+            if (!card) {
+                app.innerHTML = `
+                    <div style="text-align:center; padding:60px 20px;">
+                      <h2 style="margin-bottom:8px;">Tarjeta no encontrada</h2>
+                      <p style="color:var(--text-secondary);">Esta tarjeta no existe o el link está dañado.</p>
+                    </div>`;
+                return;
+            }
 
-        const landingView = document.createElement('div');
-        landingView.className = 'view active';
-        app.appendChild(landingView);
-        renderLanding(landingView, data);
+            // Transform DB format to app format
+            const data = dbToAppFormat(card);
+            updateMeta(data);
 
-    } else if (hash === '#preview') {
+            const landingView = document.createElement('div');
+            landingView.className = 'view active';
+            app.innerHTML = '';
+            app.appendChild(landingView);
+
+            import('./card.js').then((mod) => {
+                mod.renderLanding(landingView, data);
+            });
+        });
+
+    } else if (path === '/preview') {
         // — Preview mode: data from localStorage —
         const previewView = document.createElement('div');
         previewView.className = 'view active';
         app.appendChild(previewView);
 
-        const { getEditorData } = window.__editorModule || {};
-        const data = getEditorData ? getEditorData() : {};
+        const data = window.__previewData || {};
 
-        renderPreview(
-            previewView,
-            data,
-            () => { window.location.hash = '#editor'; },
-            () => { }
-        );
+        import('./card.js').then((mod) => {
+            mod.renderPreview(
+                previewView,
+                data,
+                () => { navigateTo('/'); },
+                () => { }
+            );
+        });
 
     } else {
         // — Editor mode (default) —
@@ -83,17 +111,46 @@ function navigate() {
         import('./editor.js').then((mod) => {
             window.__editorModule = mod;
             mod.initEditor(editorView, (data) => {
-                window.location.hash = '#preview';
+                window.__previewData = data;
+                navigateTo('/preview');
             });
         });
     }
 }
 
-function updateMeta(data) {
-    // Update document title
-    document.title = `${data.name} — ${data.profession}`;
+// Transform Supabase DB format → app display format
+function dbToAppFormat(card) {
+    return {
+        name: card.name,
+        profession: card.profession,
+        description: card.description,
+        phone: card.phone,
+        email: card.email,
+        location: card.location,
+        photo: card.photo_url,
+        coverPhoto: card.cover_url,
+        instagram: card.instagram,
+        linkedin: card.linkedin,
+        website: card.website,
+        // Convert gallery_images to app format
+        gallery: (card.gallery_images || []).map(img => ({
+            src: img.image_url,
+            caption: img.caption || '',
+        })),
+        // DB-specific fields
+        _id: card.id,
+        _editToken: card.edit_token,
+    };
+}
 
-    // Update OG tags for WhatsApp preview
+// Client-side navigation
+export function navigateTo(path) {
+    window.history.pushState({}, '', path);
+    navigate();
+}
+
+function updateMeta(data) {
+    document.title = `${data.name} — ${data.profession}`;
     setMetaTag('og:title', `${data.name} — ${data.profession}`);
     setMetaTag('og:description', data.description || `Contactá a ${data.name}`);
     setMetaTag('og:type', 'profile');
@@ -109,8 +166,8 @@ function setMetaTag(property, content) {
     tag.setAttribute('content', content);
 }
 
-// Listen for hash changes
-window.addEventListener('hashchange', navigate);
+// Listen for back/forward
+window.addEventListener('popstate', navigate);
 
 // Initial route
 navigate();

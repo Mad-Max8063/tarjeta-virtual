@@ -2,7 +2,8 @@
 // editor.js — Editor form logic
 // ============================================
 
-import { saveToLocalStorage, loadFromLocalStorage, resizeImage, resizeBanner, resizeGalleryImage } from './utils.js';
+import { resizeImage, resizeBanner, resizeGalleryImage, dataUriToFile } from './utils.js';
+import { createCard, uploadImage } from './supabase.js';
 
 const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website'];
 const MAX_DESC = 160;
@@ -22,12 +23,8 @@ const DEFAULT_DATA = {
 };
 
 export function initEditor(container, onPreview) {
-  let data = loadFromLocalStorage();
-
-  // If no data saved, start with empty defaults
-  if (!data || !data.name) {
-    data = { ...DEFAULT_DATA };
-  }
+  // Always start fresh (no localStorage)
+  let data = { ...DEFAULT_DATA };
 
   const coverPreviewStyle = data.coverPhoto
     ? `background-image: url('${data.coverPhoto}'); background-size: cover; background-position: center;`
@@ -203,7 +200,6 @@ export function initEditor(container, onPreview) {
     const dataUrl = await resizeImage(file, 200);
     avatarImg.src = dataUrl;
     data.photo = dataUrl;
-    saveToLocalStorage(data);
   });
 
   // Cover photo upload
@@ -217,7 +213,6 @@ export function initEditor(container, onPreview) {
     if (!file) return;
     const dataUrl = await resizeBanner(file, 480);
     data.coverPhoto = dataUrl;
-    saveToLocalStorage(data);
 
     // Update preview
     coverPreview.style.backgroundImage = `url('${dataUrl}')`;
@@ -251,7 +246,6 @@ export function initEditor(container, onPreview) {
     if (!input) return;
     input.addEventListener('input', () => {
       data[field] = input.value;
-      saveToLocalStorage(data);
 
       if (field === 'description') {
         container.querySelector('#desc-count').textContent = input.value.length;
@@ -259,9 +253,9 @@ export function initEditor(container, onPreview) {
     });
   });
 
-  // Form submit → preview
+  // Form submit → save to Supabase → preview
   const form = container.querySelector('#editor-form');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     // Validate required
@@ -270,7 +264,66 @@ export function initEditor(container, onPreview) {
       return;
     }
 
-    onPreview(data);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-sm"></span> Guardando...';
+
+    try {
+      // Upload avatar if it's a data URI
+      let photoUrl = '';
+      if (data.photo && data.photo.startsWith('data:')) {
+        const photoFile = dataUriToFile(data.photo, 'avatar.jpg');
+        photoUrl = await uploadImage(photoFile, 'temp', 'avatar');
+      }
+
+      // Upload cover if it's a data URI
+      let coverUrl = '';
+      if (data.coverPhoto && data.coverPhoto.startsWith('data:')) {
+        const coverFile = dataUriToFile(data.coverPhoto, 'cover.jpg');
+        coverUrl = await uploadImage(coverFile, 'temp', 'cover');
+      }
+
+      // Create card in Supabase
+      const card = await createCard({
+        name: data.name,
+        profession: data.profession,
+        description: data.description,
+        phone: data.phone,
+        email: data.email,
+        location: data.location,
+        instagram: data.instagram,
+        linkedin: data.linkedin,
+        website: data.website,
+        photo_url: photoUrl,
+        cover_url: coverUrl,
+      });
+
+      // Upload gallery images
+      if (data.gallery && data.gallery.length > 0) {
+        const { addGalleryImage, uploadImage: upload } = await import('./supabase.js');
+        for (let i = 0; i < data.gallery.length; i++) {
+          const item = data.gallery[i];
+          if (item.src && item.src.startsWith('data:')) {
+            const file = dataUriToFile(item.src, `gallery-${i}.jpg`);
+            const imgUrl = await upload(file, card.id, 'gallery');
+            await addGalleryImage(card.id, imgUrl, item.caption || '', i);
+          }
+        }
+      }
+
+      // Add Supabase IDs to data for preview
+      data._id = card.id;
+      data._editToken = card.edit_token;
+      data.photo = photoUrl;
+      data.coverPhoto = coverUrl;
+
+      onPreview(data);
+    } catch (err) {
+      console.error('Error saving card:', err);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '👁 Previsualizar tarjeta';
+      alert('Error al guardar. Revisá tu conexión e intentá de nuevo.');
+    }
   });
 
   // Gallery upload
@@ -281,7 +334,6 @@ export function initEditor(container, onPreview) {
       if (!files.length) return;
 
       if (!data.gallery) data.gallery = [];
-      // Migrate old string format
       data.gallery = data.gallery.map(item =>
         typeof item === 'string' ? { src: item, caption: '' } : item
       );
@@ -292,8 +344,6 @@ export function initEditor(container, onPreview) {
         const dataUrl = await resizeGalleryImage(file, 300);
         data.gallery.push({ src: dataUrl, caption: '' });
       }
-      saveToLocalStorage(data);
-      // Re-render the editor to show new photos
       initEditor(container, onPreview);
     });
   }
@@ -305,7 +355,6 @@ export function initEditor(container, onPreview) {
       const index = parseInt(btn.dataset.index);
       if (!data.gallery) return;
       data.gallery.splice(index, 1);
-      saveToLocalStorage(data);
       initEditor(container, onPreview);
     });
   });
@@ -315,19 +364,16 @@ export function initEditor(container, onPreview) {
     input.addEventListener('input', () => {
       const index = parseInt(input.dataset.index);
       if (!data.gallery || !data.gallery[index]) return;
-      // Migrate if needed
       if (typeof data.gallery[index] === 'string') {
         data.gallery[index] = { src: data.gallery[index], caption: '' };
       }
       data.gallery[index].caption = input.value;
-      saveToLocalStorage(data);
     });
   });
 }
 
 function removeCover(data, coverPreview, coverPlaceholder, removeBtn) {
   data.coverPhoto = '';
-  saveToLocalStorage(data);
   coverPreview.style.backgroundImage = '';
   coverPlaceholder.classList.remove('has-image');
   if (removeBtn) removeBtn.remove();
@@ -347,5 +393,6 @@ function showMissingFields(container) {
 }
 
 export function getEditorData() {
-  return loadFromLocalStorage() || {};
+  return window.__lastEditorData || {};
 }
+

@@ -1,42 +1,6 @@
 // ============================================
-// utils.js — Encoding, decoding & helpers
+// utils.js — Helpers (Supabase version)
 // ============================================
-
-export function encodeData(obj) {
-  const json = JSON.stringify(obj);
-  // Compress with pako if available, otherwise fallback to raw base64
-  if (typeof pako !== 'undefined') {
-    const compressed = pako.deflate(json);
-    const binary = String.fromCharCode.apply(null, compressed);
-    const encoded = btoa(binary);
-    return 'z' + encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-  const encoded = btoa(unescape(encodeURIComponent(json)));
-  return encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-export function decodeData(str) {
-  try {
-    // Check for compressed format (starts with 'z')
-    if (str.startsWith('z') && typeof pako !== 'undefined') {
-      let base64 = str.slice(1).replace(/-/g, '+').replace(/_/g, '/');
-      while (base64.length % 4) base64 += '=';
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const json = pako.inflate(bytes, { to: 'string' });
-      return JSON.parse(json);
-    }
-    // Fallback: raw base64 (old links)
-    let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    const json = decodeURIComponent(escape(atob(base64)));
-    return JSON.parse(json);
-  } catch (e) {
-    console.error('Error decoding data:', e);
-    return null;
-  }
-}
 
 export function generateWhatsAppLink(url, name, profession) {
   const message = `👋 ¡Hola! Te comparto mi tarjeta profesional:\n\n*${name}*\n${profession}\n\n🔗 ${url}`;
@@ -50,22 +14,12 @@ export function sanitize(str) {
   return div.innerHTML;
 }
 
-export function saveToLocalStorage(data) {
-  localStorage.setItem('virtualCardData', JSON.stringify(data));
+export function getCardUrl(cardId) {
+  return `${window.location.origin}/card/${cardId}`;
 }
 
-export function loadFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem('virtualCardData');
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function getCardUrl(data) {
-  const encoded = encodeData(data);
-  return `${window.location.origin}${window.location.pathname}#card/${encoded}`;
+export function getEditUrl(cardId, editToken) {
+  return `${window.location.origin}/edit/${cardId}?token=${editToken}`;
 }
 
 export function resizeBanner(file, maxWidth = 480) {
@@ -136,4 +90,15 @@ export function resizeImage(file, maxSize = 200) {
     };
     reader.readAsDataURL(file);
   });
+}
+
+// Convert data URI to File object for Supabase upload
+export function dataUriToFile(dataUri, filename = 'image.jpg') {
+  const arr = dataUri.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
 }

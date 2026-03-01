@@ -43,12 +43,14 @@ export function generateVCard(data) {
         lines.push(`NOTE:${data.description}`);
     }
 
-    // Add photo if available and not too large
+    // Add photo if available
     if (data.photo && data.photo.startsWith('data:image')) {
         const base64 = data.photo.split(',')[1];
         if (base64 && base64.length < 50000) {
             lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${base64}`);
         }
+    } else if (data.photo && data.photo.startsWith('https://')) {
+        lines.push(`PHOTO;VALUE=uri:${data.photo}`);
     }
 
     lines.push('END:VCARD');

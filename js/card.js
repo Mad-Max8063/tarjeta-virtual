@@ -2,7 +2,7 @@
 // card.js — Card rendering (Preview + Landing)
 // ============================================
 
-import { encodeData, getCardUrl, generateWhatsAppLink, sanitize } from './utils.js';
+import { getCardUrl, getEditUrl, generateWhatsAppLink, sanitize } from './utils.js';
 import { downloadVCard } from './vcard.js';
 
 // SVG Icons
@@ -23,10 +23,9 @@ const ICONS = {
 };
 
 export function renderPreview(container, data, onEdit, onShare) {
-  const cardUrl = getCardUrl(data);
+  const cardUrl = data._id ? getCardUrl(data._id) : '';
+  const editUrl = (data._id && data._editToken) ? getEditUrl(data._id, data._editToken) : '';
   const waLink = generateWhatsAppLink(cardUrl, data.name, data.profession);
-
-  const editUrl = `${window.location.origin}${window.location.pathname}#edit/${encodeData(data)}`;
 
   container.innerHTML = `
     <button class="back-btn" id="btn-back-edit">
@@ -209,10 +208,11 @@ function buildCardHTML(data) {
     socialLinks = `< div class="social-links" > ${links}</div > `;
   }
 
-  // Only allow data: URIs and relative asset paths for cover photo (prevent XSS)
+  // Allow data: URIs, Supabase Storage URLs, and local assets for cover photo
   const safeCover = data.coverPhoto && (
     data.coverPhoto.startsWith('data:image/') ||
-    data.coverPhoto.startsWith('assets/')
+    data.coverPhoto.startsWith('assets/') ||
+    data.coverPhoto.startsWith('https://')
   ) ? data.coverPhoto : '';
 
   const coverStyle = safeCover

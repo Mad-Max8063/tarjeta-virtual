@@ -1,24 +1,32 @@
 // ============================================
 // gallery-editor.js — Mini-editor for professionals
 // Only gallery editing, core info stays locked
+// Uses Supabase for storage & data
 // ============================================
 
-import { sanitize, encodeData, getCardUrl, resizeGalleryImage } from './utils.js';
-import { renderLanding } from './card.js';
+import { sanitize, getCardUrl, resizeGalleryImage, dataUriToFile } from './utils.js';
+import { uploadImage, addGalleryImage, deleteGalleryImage, getGalleryImages } from './supabase.js';
 
-export function renderGalleryEditor(container, data) {
-    // Normalize gallery
-    if (!data.gallery) data.gallery = [];
-    data.gallery = data.gallery.map(item =>
-        typeof item === 'string' ? { src: item, caption: '' } : item
-    );
+export function renderGalleryEditor(container, card) {
+  // card comes from Supabase (DB format with _id etc.)
+  const data = {
+    name: card.name,
+    profession: card.profession,
+    photo: card.photo_url,
+    _id: card.id,
+    gallery: (card.gallery_images || []).map(img => ({
+      id: img.id,
+      src: img.image_url,
+      caption: img.caption || '',
+    })),
+  };
 
-    container.innerHTML = buildGalleryEditorHTML(data);
-    wireGalleryEditorEvents(container, data);
+  container.innerHTML = buildGalleryEditorHTML(data);
+  wireGalleryEditorEvents(container, data);
 }
 
 function buildGalleryEditorHTML(data) {
-    const galleryThumbs = data.gallery.map((item, i) => `
+  const galleryThumbs = data.gallery.map((item, i) => `
     <div class="gallery-thumb-wrapper" data-index="${i}">
       <div class="gallery-thumb">
         <img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}">
@@ -29,7 +37,7 @@ function buildGalleryEditorHTML(data) {
     </div>
   `).join('');
 
-    const addBtn = data.gallery.length < 4 ? `
+  const addBtn = data.gallery.length < 4 ? `
     <label for="ge-gallery-input" class="gallery-add-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -39,7 +47,7 @@ function buildGalleryEditorHTML(data) {
     </label>
   ` : '';
 
-    return `
+  return `
     <div class="gallery-editor-view">
       <div class="ge-header">
         <h1 class="ge-title">📸 Personalizá tu tarjeta</h1>
@@ -112,77 +120,91 @@ function buildGalleryEditorHTML(data) {
 }
 
 function wireGalleryEditorEvents(container, data) {
-    const galleryInput = container.querySelector('#ge-gallery-input');
-    const generateBtn = container.querySelector('#ge-generate');
+  const galleryInput = container.querySelector('#ge-gallery-input');
+  const generateBtn = container.querySelector('#ge-generate');
 
-    // Gallery upload
-    if (galleryInput) {
-        galleryInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (!files.length) return;
+  // Gallery upload — save directly to Supabase
+  if (galleryInput) {
+    galleryInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
 
-            const remaining = 4 - data.gallery.length;
-            const toProcess = files.slice(0, remaining);
+      const remaining = 4 - data.gallery.length;
+      const toProcess = files.slice(0, remaining);
 
-            for (const file of toProcess) {
-                const dataUrl = await resizeGalleryImage(file, 300);
-                data.gallery.push({ src: dataUrl, caption: '' });
-            }
-            // Re-render
-            renderGalleryEditor(container, data);
-        });
-    }
-
-    // Remove gallery items
-    container.querySelectorAll('.gallery-remove').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const index = parseInt(btn.dataset.index);
-            data.gallery.splice(index, 1);
-            renderGalleryEditor(container, data);
-        });
+      for (const file of toProcess) {
+        // Resize locally
+        const dataUrl = await resizeGalleryImage(file, 300);
+        // Upload to Supabase Storage
+        const uploadFile = dataUriToFile(dataUrl, file.name);
+        const imageUrl = await uploadImage(uploadFile, data._id, 'gallery');
+        // Save to gallery_images table
+        const dbImage = await addGalleryImage(data._id, imageUrl, '', data.gallery.length);
+        data.gallery.push({ id: dbImage.id, src: imageUrl, caption: '' });
+      }
+      // Re-render
+      renderGalleryEditor_internal(container, data);
     });
+  }
 
-    // Caption inputs
-    container.querySelectorAll('.gallery-caption-input').forEach(input => {
-        input.addEventListener('input', () => {
-            const index = parseInt(input.dataset.index);
-            if (data.gallery[index]) {
-                data.gallery[index].caption = input.value;
-            }
-        });
+  // Remove gallery items
+  container.querySelectorAll('.gallery-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const index = parseInt(btn.dataset.index);
+      const item = data.gallery[index];
+      // Delete from Supabase
+      if (item.id) {
+        await deleteGalleryImage(item.id);
+      }
+      data.gallery.splice(index, 1);
+      renderGalleryEditor_internal(container, data);
     });
+  });
 
-    // Generate share link
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const cardUrl = getCardUrl(data);
-            const shareResult = container.querySelector('#ge-share-result');
-            const shareUrlInput = container.querySelector('#ge-share-url');
-            const copyBtn = container.querySelector('#ge-copy-btn');
-            const whatsappLink = container.querySelector('#ge-whatsapp-link');
+  // Caption inputs — save on blur to avoid too many API calls
+  container.querySelectorAll('.gallery-caption-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const index = parseInt(input.dataset.index);
+      if (data.gallery[index]) {
+        data.gallery[index].caption = input.value;
+      }
+    });
+  });
 
-            shareUrlInput.value = cardUrl;
-            shareResult.style.display = 'block';
+  // Generate share link (short URL!)
+  if (generateBtn) {
+    generateBtn.addEventListener('click', () => {
+      const cardUrl = getCardUrl(data._id);
+      const shareResult = container.querySelector('#ge-share-result');
+      const shareUrlInput = container.querySelector('#ge-share-url');
+      const copyBtn = container.querySelector('#ge-copy-btn');
+      const whatsappLink = container.querySelector('#ge-whatsapp-link');
 
-            // Scroll to share result
-            shareResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      shareUrlInput.value = cardUrl;
+      shareResult.style.display = 'block';
 
-            // Copy button
-            copyBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(cardUrl).then(() => {
-                    copyBtn.textContent = '✓ Copiado';
-                    copyBtn.classList.add('copied');
-                    setTimeout(() => {
-                        copyBtn.textContent = 'Copiar';
-                        copyBtn.classList.remove('copied');
-                    }, 2000);
-                });
-            });
+      shareResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            // WhatsApp link
-            const message = `👋 ¡Hola! Te comparto mi tarjeta profesional:\n\n*${data.name}*\n${data.profession}\n\n🔗 ${cardUrl}`;
-            whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(cardUrl).then(() => {
+          copyBtn.textContent = '✓ Copiado';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = 'Copiar';
+            copyBtn.classList.remove('copied');
+          }, 2000);
         });
-    }
+      });
+
+      const message = `👋 ¡Hola! Te comparto mi tarjeta profesional:\n\n*${data.name}*\n${data.profession}\n\n🔗 ${cardUrl}`;
+      whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    });
+  }
+}
+
+// Internal re-render (data already transformed)
+function renderGalleryEditor_internal(container, data) {
+  container.innerHTML = buildGalleryEditorHTML(data);
+  wireGalleryEditorEvents(container, data);
 }
