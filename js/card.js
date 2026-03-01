@@ -26,6 +26,8 @@ export function renderPreview(container, data, onEdit, onShare) {
   const cardUrl = getCardUrl(data);
   const waLink = generateWhatsAppLink(cardUrl, data.name, data.profession);
 
+  const editUrl = `${window.location.origin}${window.location.pathname}#edit/${encodeData(data)}`;
+
   container.innerHTML = `
     <button class="back-btn" id="btn-back-edit">
       ${ICONS.back} Volver
@@ -33,36 +35,57 @@ export function renderPreview(container, data, onEdit, onShare) {
 
     ${buildCardHTML(data)}
 
-    <div class="btn-group" style="margin-top: 24px;">
-      <div class="share-box">
-        <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        <input type="text" value="${cardUrl}" readonly id="share-url">
+  <div class="btn-group" style="margin-top: 24px;">
+    <div class="share-box">
+      <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" /></svg>
+      <input type="text" value="${cardUrl}" readonly id="share-url">
         <button class="btn-copy" id="btn-copy">Copiar</button>
-      </div>
-
-      <a href="${waLink}" target="_blank" rel="noopener" class="btn btn-whatsapp" id="btn-share-wa">
-        ${ICONS.whatsapp}
-        Compartir por WhatsApp
-      </a>
-
-      <button class="btn btn-secondary" id="btn-edit-again">
-        ${ICONS.edit} Editar datos
-      </button>
     </div>
+
+    <a href="${waLink}" target="_blank" rel="noopener" class="btn btn-whatsapp" id="btn-share-wa">
+      ${ICONS.whatsapp}
+      Compartir por WhatsApp
+    </a>
+
+    <div class="edit-link-section">
+      <div class="section-label" style="font-size: 0.7rem; margin-bottom: 8px;">\u270f\ufe0f Link de edici\u00f3n (envialo al profesional)</div>
+      <div class="share-box">
+        <svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+        <input type="text" value="${editUrl}" readonly id="edit-url">
+          <button class="btn-copy" id="btn-copy-edit">Copiar</button>
+      </div>
+      <p class="section-hint" style="margin-top: 6px; font-size: 0.68rem;">El profesional podr\u00e1 agregar fotos de trabajos antes de compartir su tarjeta.</p>
+    </div>
+
+    <button class="btn btn-secondary" id="btn-edit-again">
+      ${ICONS.edit} Editar datos
+    </button>
+  </div>
   `;
 
   // Events
   container.querySelector('#btn-back-edit').addEventListener('click', onEdit);
   container.querySelector('#btn-edit-again').addEventListener('click', onEdit);
 
+  // Copy share URL
   container.querySelector('#btn-copy').addEventListener('click', () => {
     const input = container.querySelector('#share-url');
     navigator.clipboard.writeText(input.value).then(() => {
-      showToast('✓ Link copiado al portapapeles');
-    }).catch(() => {
-      input.select();
-      document.execCommand('copy');
-      showToast('✓ Link copiado');
+      const btn = container.querySelector('#btn-copy');
+      btn.textContent = '\u2713 Copiado';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+    });
+  });
+
+  // Copy edit URL
+  container.querySelector('#btn-copy-edit').addEventListener('click', () => {
+    const input = container.querySelector('#edit-url');
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = container.querySelector('#btn-copy-edit');
+      btn.textContent = '\u2713 Copiado';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
     });
   });
 
@@ -73,24 +96,24 @@ export function renderLanding(container, data) {
   container.innerHTML = `
     ${buildCardHTML(data)}
 
-    <div style="padding: 0 4px;">
-      <!-- Save Contact -->
-      <div class="btn-group" style="margin-top: 24px;">
-        <button class="btn btn-save-contact" id="btn-save-contact">
-          ${ICONS.save}
-          Guardar contacto
-        </button>
-      </div>
-
-      <div class="save-success" id="save-success">
-        <div class="check-circle">${ICONS.check}</div>
-        <p>¡Contacto descargado!<br>Abrilo para guardar en tu agenda</p>
-      </div>
-
-      <div class="landing-footer">
-        Creado por <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">Max Devs Solutions</a>
-      </div>
+  <div style="padding: 0 4px;">
+    <!-- Save Contact -->
+    <div class="btn-group" style="margin-top: 24px;">
+      <button class="btn btn-save-contact" id="btn-save-contact">
+        ${ICONS.save}
+        Guardar contacto
+      </button>
     </div>
+
+    <div class="save-success" id="save-success">
+      <div class="check-circle">${ICONS.check}</div>
+      <p>¡Contacto descargado!<br>Abrilo para guardar en tu agenda</p>
+    </div>
+
+    <div class="landing-footer">
+      Creado por <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">Max Devs Solutions</a>
+    </div>
+  </div>
   `;
 
   // Save contact button
@@ -125,65 +148,65 @@ function buildCardHTML(data) {
 
   if (data.phone) {
     contactChips += `
-      <a href="tel:${cleanPhone}" class="contact-chip stagger-${chipIndex++}">
+    < a href = "tel:${cleanPhone}" class="contact-chip stagger-${chipIndex++}" >
         <div class="chip-icon phone">${ICONS.phone}</div>
         <div>
           <span class="chip-label">Teléfono</span>
           <span class="chip-value">${sanitize(data.phone)}</span>
           <span class="chip-action">Llamar ahora</span>
         </div>
-      </a>`;
+      </a > `;
   }
 
   if (data.email) {
     contactChips += `
-      <a href="mailto:${sanitize(data.email)}" class="contact-chip stagger-${chipIndex++}">
+    < a href = "mailto:${sanitize(data.email)}" class="contact-chip stagger-${chipIndex++}" >
         <div class="chip-icon email">${ICONS.email}</div>
         <div>
           <span class="chip-label">Email</span>
           <span class="chip-value">${sanitize(data.email)}</span>
           <span class="chip-action">Enviar correo</span>
         </div>
-      </a>`;
+      </a > `;
   }
 
   if (data.phone) {
     contactChips += `
-      <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener" class="contact-chip stagger-${chipIndex++}">
+    < a href = "https://wa.me/${cleanPhone}" target = "_blank" rel = "noopener" class="contact-chip stagger-${chipIndex++}" >
         <div class="chip-icon whatsapp">${ICONS.whatsapp}</div>
         <div>
           <span class="chip-label">WhatsApp</span>
           <span class="chip-value">Enviar mensaje</span>
           <span class="chip-action">Mensaje directo</span>
         </div>
-      </a>`;
+      </a > `;
   }
 
   if (data.location) {
     contactChips += `
-      <div class="contact-chip stagger-${chipIndex++}">
+    < div class="contact-chip stagger-${chipIndex++}" >
         <div class="chip-icon location">${ICONS.location}</div>
         <div>
           <span class="chip-label">Ubicación</span>
           <span class="chip-value">${sanitize(data.location)}</span>
           <span class="chip-action">Ver en mapa</span>
         </div>
-      </div>`;
+      </div > `;
   }
 
   let socialLinks = '';
   if (data.instagram || data.linkedin || data.website) {
     let links = '';
     if (data.instagram) {
-      links += `<a href="https://instagram.com/${data.instagram.replace('@', '')}" target="_blank" rel="noopener" class="social-link" title="Instagram">${ICONS.instagram}</a>`;
+      links += `< a href = "https://instagram.com/${data.instagram.replace('@', '')}" target = "_blank" rel = "noopener" class="social-link" title = "Instagram" > ${ICONS.instagram}</a > `;
     }
     if (data.linkedin) {
-      links += `<a href="${sanitize(data.linkedin)}" target="_blank" rel="noopener" class="social-link" title="LinkedIn">${ICONS.linkedin}</a>`;
+      links += `< a href = "${sanitize(data.linkedin)}" target = "_blank" rel = "noopener" class="social-link" title = "LinkedIn" > ${ICONS.linkedin}</a > `;
     }
     if (data.website) {
-      links += `<a href="${sanitize(data.website)}" target="_blank" rel="noopener" class="social-link" title="Sitio web">${ICONS.website}</a>`;
+      links += `< a href = "${sanitize(data.website)}" target = "_blank" rel = "noopener" class="social-link" title = "Sitio web" > ${ICONS.website}</a > `;
     }
-    socialLinks = `<div class="social-links">${links}</div>`;
+    socialLinks = `< div class="social-links" > ${links}</div > `;
   }
 
   // Only allow data: URIs and relative asset paths for cover photo (prevent XSS)
@@ -193,7 +216,7 @@ function buildCardHTML(data) {
   ) ? data.coverPhoto : '';
 
   const coverStyle = safeCover
-    ? `background-image: url('${safeCover}'); background-size: cover; background-position: center;`
+    ? `background - image: url('${safeCover}'); background - size: cover; background - position: center; `
     : '';
 
   // Hero mode: no avatar + has cover = expanded banner with name overlay
@@ -208,12 +231,12 @@ function buildCardHTML(data) {
   let gallerySection = '';
   if (gallery.length > 0) {
     const galleryItems = gallery.map((item, i) => {
-      const caption = item.caption ? `<div class="gallery-caption">${sanitize(item.caption)}</div>` : '';
-      return `<div class="gallery-item"><img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}" loading="lazy">${caption}</div>`;
+      const caption = item.caption ? `< div class="gallery-caption" > ${sanitize(item.caption)}</div > ` : '';
+      return `< div class="gallery-item" > <img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}" loading="lazy">${caption}</div>`;
     }).join('');
 
     gallerySection = `
-      <div class="gallery-section">
+    < div class="gallery-section" >
         <button type="button" class="gallery-toggle" id="gallery-toggle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -230,14 +253,14 @@ function buildCardHTML(data) {
             ${galleryItems}
           </div>
         </div>
-      </div>
+      </div >
     `;
   }
 
   // Hero mode: name overlay on banner, no avatar shown
   if (isHero) {
     return `
-    <div class="${cardClass}">
+    < div class="${cardClass}" >
       <div class="${coverClass}" style="${coverStyle}">
         <div class="hero-overlay">
           <h2 class="hero-name">${sanitize(data.name)}</h2>
@@ -261,13 +284,13 @@ function buildCardHTML(data) {
 
         ${gallerySection}
       </div>
-    </div>
-  `;
+    </div >
+    `;
   }
 
   // Normal mode with avatar
   return `
-    <div class="${cardClass}">
+    < div class="${cardClass}" >
       <div class="${coverClass}" style="${coverStyle}"></div>
       <div class="card-avatar">
         <img src="${avatarSrc}" alt="${sanitize(data.name)}">
@@ -291,8 +314,8 @@ function buildCardHTML(data) {
 
         ${gallerySection}
       </div>
-    </div>
-  `;
+    </div >
+    `;
 }
 
 function showToast(message) {

@@ -1373,7 +1373,117 @@ body::before {
   color: var(--text-secondary);
   line-height: 1.4;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ===== Gallery Editor View ===== */
+.gallery-editor-view {
+  padding: 20px 0;
+}
+
+.ge-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.ge-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.ge-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.ge-preview-card {
+  margin-bottom: 20px;
+}
+
+.ge-preview-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.ge-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-start);
+}
+
+.ge-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.ge-profession {
+  font-size: 0.8rem;
+  color: var(--accent-start);
+}
+
+.ge-actions {
+  margin-top: 24px;
+}
+
+.ge-share-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1rem;
+  padding: 16px;
+}
+
+.ge-share-result {
+  margin-top: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.ge-whatsapp-row {
+  margin-top: 12px;
+}
+
+.ge-whatsapp-row .btn-whatsapp {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.ge-whatsapp-row .btn-whatsapp:hover {
+  opacity: 0.9;
+}
+
+/* Edit link section in preview */
+.edit-link-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glass);
 }

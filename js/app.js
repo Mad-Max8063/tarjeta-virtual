@@ -14,8 +14,29 @@ function navigate() {
     // Clear container
     app.innerHTML = '';
     app.className = 'app-container';
+    if (hash.startsWith('#edit/')) {
+        // — Gallery edit mode: professional adds their work photos —
+        const encoded = hash.replace('#edit/', '');
+        const data = decodeData(encoded);
 
-    if (hash.startsWith('#card/')) {
+        if (!data) {
+            app.innerHTML = `
+        <div style="text-align:center; padding:60px 20px;">
+          <h2 style="margin-bottom:8px;">Link inválido</h2>
+          <p style="color:var(--text-secondary);">Esta tarjeta no existe o el link está dañado.</p>
+        </div>`;
+            return;
+        }
+
+        const editView = document.createElement('div');
+        editView.className = 'view active';
+        app.appendChild(editView);
+
+        import('./gallery-editor.js').then((mod) => {
+            mod.renderGalleryEditor(editView, data);
+        });
+
+    } else if (hash.startsWith('#card/')) {
         // — Landing mode: decode data from URL —
         const encoded = hash.replace('#card/', '');
         const data = decodeData(encoded);
