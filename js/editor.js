@@ -7,27 +7,26 @@ import { saveToLocalStorage, loadFromLocalStorage, resizeImage, resizeBanner, re
 const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website'];
 const MAX_DESC = 160;
 
-// Demo data for Gabriel Aparicio
-const DEMO_DATA = {
-  name: 'Gabriel Aparicio',
-  profession: 'Técnico Matriculado en Refrigeración',
-  description: 'Reparación y mantenimiento de electrodomésticos. Heladeras, aire acondicionado, lavarropas, microondas y hornos eléctricos.',
-  phone: '+54 11 6421-8151',
+// Default empty data (no demo info)
+const DEFAULT_DATA = {
+  name: '',
+  profession: '',
+  description: '',
+  phone: '',
   email: '',
-  location: 'Merlo, Buenos Aires',
+  location: '',
   instagram: '',
   linkedin: '',
   website: '',
-  coverPhoto: 'assets/demo-cover.png'
+  coverPhoto: ''
 };
 
 export function initEditor(container, onPreview) {
   let data = loadFromLocalStorage();
 
-  // If no data saved, load demo data
+  // If no data saved, start with empty defaults
   if (!data || !data.name) {
-    data = { ...DEMO_DATA };
-    saveToLocalStorage(data);
+    data = { ...DEFAULT_DATA };
   }
 
   const coverPreviewStyle = data.coverPhoto
@@ -150,16 +149,23 @@ export function initEditor(container, onPreview) {
       <div class="glass-card">
         <div class="form-section">
           <div class="section-label">Fotos de trabajos (opcional)</div>
-          <p class="section-hint">Mostrá tus trabajos realizados. Máximo 4 fotos.</p>
+          <p class="section-hint">Mostrá tus trabajos realizados. Máximo 4 fotos con descripción.</p>
 
           <div class="gallery-upload" id="gallery-upload">
             <div class="gallery-grid" id="gallery-grid">
-              ${(data.gallery || []).map((img, i) => `
-                <div class="gallery-thumb" data-index="${i}">
-                  <img src="${img}" alt="Trabajo ${i + 1}">
-                  <button type="button" class="gallery-remove" data-index="${i}">✕</button>
+              ${(data.gallery || []).map((item, i) => {
+    const src = typeof item === 'string' ? item : item.src;
+    const caption = typeof item === 'string' ? '' : (item.caption || '');
+    return `
+                <div class="gallery-thumb-wrapper" data-index="${i}">
+                  <div class="gallery-thumb">
+                    <img src="${src}" alt="Trabajo ${i + 1}">
+                    <button type="button" class="gallery-remove" data-index="${i}">✕</button>
+                  </div>
+                  <input type="text" class="gallery-caption-input" data-index="${i}" 
+                    placeholder="Ej: Instalación de aire split" value="${caption}" maxlength="60">
                 </div>
-              `).join('')}
+              `}).join('')}
               ${(data.gallery || []).length < 4 ? `
                 <label for="gallery-input" class="gallery-add-btn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -275,12 +281,16 @@ export function initEditor(container, onPreview) {
       if (!files.length) return;
 
       if (!data.gallery) data.gallery = [];
+      // Migrate old string format
+      data.gallery = data.gallery.map(item =>
+        typeof item === 'string' ? { src: item, caption: '' } : item
+      );
       const remaining = 4 - data.gallery.length;
       const toProcess = files.slice(0, remaining);
 
       for (const file of toProcess) {
         const dataUrl = await resizeGalleryImage(file, 300);
-        data.gallery.push(dataUrl);
+        data.gallery.push({ src: dataUrl, caption: '' });
       }
       saveToLocalStorage(data);
       // Re-render the editor to show new photos
@@ -297,6 +307,20 @@ export function initEditor(container, onPreview) {
       data.gallery.splice(index, 1);
       saveToLocalStorage(data);
       initEditor(container, onPreview);
+    });
+  });
+
+  // Gallery caption inputs
+  container.querySelectorAll('.gallery-caption-input').forEach((input) => {
+    input.addEventListener('input', () => {
+      const index = parseInt(input.dataset.index);
+      if (!data.gallery || !data.gallery[index]) return;
+      // Migrate if needed
+      if (typeof data.gallery[index] === 'string') {
+        data.gallery[index] = { src: data.gallery[index], caption: '' };
+      }
+      data.gallery[index].caption = input.value;
+      saveToLocalStorage(data);
     });
   });
 }

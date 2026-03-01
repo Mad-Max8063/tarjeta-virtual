@@ -4,12 +4,30 @@
 
 export function encodeData(obj) {
   const json = JSON.stringify(obj);
+  // Compress with pako if available, otherwise fallback to raw base64
+  if (typeof pako !== 'undefined') {
+    const compressed = pako.deflate(json);
+    const binary = String.fromCharCode.apply(null, compressed);
+    const encoded = btoa(binary);
+    return 'z' + encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
   const encoded = btoa(unescape(encodeURIComponent(json)));
   return encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 export function decodeData(str) {
   try {
+    // Check for compressed format (starts with 'z')
+    if (str.startsWith('z') && typeof pako !== 'undefined') {
+      let base64 = str.slice(1).replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) base64 += '=';
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const json = pako.inflate(bytes, { to: 'string' });
+      return JSON.parse(json);
+    }
+    // Fallback: raw base64 (old links)
     let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4) base64 += '=';
     const json = decodeURIComponent(escape(atob(base64)));

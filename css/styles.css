@@ -692,6 +692,37 @@ body::before {
   height: 150px;
 }
 
+/* Hero mode: expanded banner when no avatar */
+.card.hero-mode .card-banner.hero-banner {
+  height: 220px;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  z-index: 3;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.1) 60%, transparent 100%);
+}
+
+.hero-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  margin-bottom: 2px;
+}
+
+.hero-profession {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
 .card-banner.has-cover::before {
   content: '';
   position: absolute;
@@ -1156,6 +1187,33 @@ body::before {
   object-fit: cover;
 }
 
+.gallery-thumb-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gallery-caption-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.gallery-caption-input::placeholder {
+  color: var(--text-muted);
+}
+
+.gallery-caption-input:focus {
+  border-color: var(--accent-start);
+}
+
 .gallery-remove {
   position: absolute;
   top: 6px;
@@ -1290,13 +1348,13 @@ body::before {
 
 .gallery-item {
   flex: 0 0 auto;
-  width: 180px;
-  height: 130px;
+  width: 200px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   scroll-snap-align: start;
   border: 1px solid var(--border-glass);
   transition: transform var(--transition-fast);
+  background: var(--bg-input);
 }
 
 .gallery-item:hover {
@@ -1305,6 +1363,17 @@ body::before {
 
 .gallery-item img {
   width: 100%;
-  height: 100%;
+  height: 130px;
   object-fit: cover;
+}
+
+.gallery-caption {
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

@@ -88,7 +88,7 @@ export function renderLanding(container, data) {
       </div>
 
       <div class="landing-footer">
-        Tarjeta creada con ❤️ <span class="footer-divider">·</span> <a href="#editor">Creá la tuya →</a>
+        Creado por <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">Max Devs Solutions</a>
       </div>
     </div>
   `;
@@ -107,7 +107,16 @@ export function renderLanding(container, data) {
   wireGalleryToggle(container);
 }
 
+function normalizeGallery(gallery) {
+  if (!gallery || !gallery.length) return [];
+  return gallery.map(item => {
+    if (typeof item === 'string') return { src: item, caption: '' };
+    return item;
+  });
+}
+
 function buildCardHTML(data) {
+  const hasAvatar = data.photo && !data.photo.includes('default-avatar');
   const avatarSrc = data.photo || 'assets/default-avatar.svg';
   const cleanPhone = (data.phone || '').replace(/[^+\d]/g, '');
 
@@ -186,14 +195,22 @@ function buildCardHTML(data) {
   const coverStyle = safeCover
     ? `background-image: url('${safeCover}'); background-size: cover; background-position: center;`
     : '';
-  const coverClass = safeCover ? 'card-banner has-cover' : 'card-banner';
 
-  // Gallery section (collapsible)
+  // Hero mode: no avatar + has cover = expanded banner with name overlay
+  const isHero = !hasAvatar && safeCover;
+  const coverClass = isHero
+    ? 'card-banner has-cover hero-banner'
+    : safeCover ? 'card-banner has-cover' : 'card-banner';
+  const cardClass = isHero ? 'card hero-mode' : 'card';
+
+  // Gallery section (collapsible, with captions)
+  const gallery = normalizeGallery(data.gallery);
   let gallerySection = '';
-  if (data.gallery && data.gallery.length > 0) {
-    const galleryItems = data.gallery.map((img, i) =>
-      `<div class="gallery-item"><img src="${img}" alt="Trabajo ${i + 1}" loading="lazy"></div>`
-    ).join('');
+  if (gallery.length > 0) {
+    const galleryItems = gallery.map((item, i) => {
+      const caption = item.caption ? `<div class="gallery-caption">${sanitize(item.caption)}</div>` : '';
+      return `<div class="gallery-item"><img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}" loading="lazy">${caption}</div>`;
+    }).join('');
 
     gallerySection = `
       <div class="gallery-section">
@@ -203,7 +220,7 @@ function buildCardHTML(data) {
             <circle cx="8.5" cy="8.5" r="1.5"></circle>
             <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
-          Ver trabajos realizados (${data.gallery.length})
+          Ver trabajos realizados (${gallery.length})
           <svg class="toggle-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -217,8 +234,40 @@ function buildCardHTML(data) {
     `;
   }
 
+  // Hero mode: name overlay on banner, no avatar shown
+  if (isHero) {
+    return `
+    <div class="${cardClass}">
+      <div class="${coverClass}" style="${coverStyle}">
+        <div class="hero-overlay">
+          <h2 class="hero-name">${sanitize(data.name)}</h2>
+          <p class="hero-profession">${sanitize(data.profession)}</p>
+        </div>
+      </div>
+      <div class="card-body">
+        ${data.description ? `<p class="card-description">${sanitize(data.description)}</p>` : ''}
+        ${data.location ? `
+          <div class="card-location">
+            ${ICONS.location} ${sanitize(data.location)}
+          </div>` : ''}
+
+        <div class="divider"></div>
+
+        <div class="contact-chips">
+          ${contactChips}
+        </div>
+
+        ${socialLinks}
+
+        ${gallerySection}
+      </div>
+    </div>
+  `;
+  }
+
+  // Normal mode with avatar
   return `
-    <div class="card">
+    <div class="${cardClass}">
       <div class="${coverClass}" style="${coverStyle}"></div>
       <div class="card-avatar">
         <img src="${avatarSrc}" alt="${sanitize(data.name)}">
