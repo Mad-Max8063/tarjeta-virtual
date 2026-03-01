@@ -1662,3 +1662,24 @@ body::before {
   color: var(--accent-end);
   text-decoration: underline;
 }
+
+/* ---------- Gallery Editor Save Feedback ---------- */
+.ge-save-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ge-save-feedback {
+  text-align: center;
+  margin-top: 10px;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.ge-save-success {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.9rem;
+}

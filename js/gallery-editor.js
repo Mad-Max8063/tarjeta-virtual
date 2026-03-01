@@ -5,7 +5,7 @@
 // ============================================
 
 import { sanitize, getCardUrl, resizeGalleryImage, dataUriToFile } from './utils.js';
-import { uploadImage, addGalleryImage, deleteGalleryImage, getGalleryImages } from './supabase.js';
+import { uploadImage, addGalleryImage, deleteGalleryImage, getGalleryImages, updateGalleryCaption } from './supabase.js';
 
 export function renderGalleryEditor(container, card) {
   // card comes from Supabase (DB format with _id etc.)
@@ -81,7 +81,17 @@ function buildGalleryEditorHTML(data) {
         </div>
       </div>
 
-      <!-- Action buttons -->
+      <!-- Save captions button -->
+      <div class="ge-actions">
+        <button type="button" class="btn btn-secondary ge-save-btn" id="ge-save-captions">
+          💾 Guardar descripciones
+        </button>
+        <div class="ge-save-feedback" id="ge-save-feedback" style="display:none;">
+          <span class="ge-save-success">✅ Descripciones guardadas correctamente</span>
+        </div>
+      </div>
+
+      <!-- Share button -->
       <div class="ge-actions">
         <button type="button" class="btn-primary ge-share-btn" id="ge-generate">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
@@ -171,6 +181,45 @@ function wireGalleryEditorEvents(container, data) {
       }
     });
   });
+
+  // Save captions to Supabase
+  const saveCaptionsBtn = container.querySelector('#ge-save-captions');
+  if (saveCaptionsBtn) {
+    saveCaptionsBtn.addEventListener('click', async () => {
+      // Sync captions from DOM first
+      container.querySelectorAll('.gallery-caption-input').forEach(input => {
+        const index = parseInt(input.dataset.index);
+        if (data.gallery[index]) {
+          data.gallery[index].caption = input.value;
+        }
+      });
+
+      saveCaptionsBtn.disabled = true;
+      saveCaptionsBtn.innerHTML = '<span class="spinner-sm"></span> Guardando...';
+
+      try {
+        for (const item of data.gallery) {
+          if (item.id && item.caption !== undefined) {
+            await updateGalleryCaption(item.id, item.caption);
+          }
+        }
+        // Show success feedback
+        const feedback = container.querySelector('#ge-save-feedback');
+        feedback.style.display = 'block';
+        saveCaptionsBtn.innerHTML = '✅ Guardado';
+        setTimeout(() => {
+          saveCaptionsBtn.disabled = false;
+          saveCaptionsBtn.innerHTML = '💾 Guardar descripciones';
+          feedback.style.display = 'none';
+        }, 3000);
+      } catch (err) {
+        console.error('Error saving captions:', err);
+        saveCaptionsBtn.disabled = false;
+        saveCaptionsBtn.innerHTML = '💾 Guardar descripciones';
+        alert('Error al guardar. Intentá de nuevo.');
+      }
+    });
+  }
 
   // Generate share link (short URL!)
   if (generateBtn) {

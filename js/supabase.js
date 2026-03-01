@@ -165,3 +165,16 @@ export async function getGalleryImages(cardId) {
     }
     return data || [];
 }
+
+export async function updateGalleryCaption(imageId, caption) {
+    const db = getClient();
+    const { error } = await db
+        .from('gallery_images')
+        .update({ caption: caption })
+        .eq('id', imageId);
+
+    if (error) {
+        console.error('Error updating caption:', error);
+        throw error;
+    }
+}
