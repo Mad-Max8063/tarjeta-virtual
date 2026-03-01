@@ -159,6 +159,7 @@ function showPasswordGate() {
 }
 
 function loadEditor() {
+    app.innerHTML = '';
     const editorView = document.createElement('div');
     editorView.className = 'view active';
     app.appendChild(editorView);
