@@ -103,19 +103,73 @@ function navigate() {
         });
 
     } else {
-        // — Editor mode (default) —
-        const editorView = document.createElement('div');
-        editorView.className = 'view active';
-        app.appendChild(editorView);
-
-        import('./editor.js').then((mod) => {
-            window.__editorModule = mod;
-            mod.initEditor(editorView, (data) => {
-                window.__previewData = data;
-                navigateTo('/preview');
-            });
-        });
+        // — Editor mode (protected) —
+        if (sessionStorage.getItem('editor_auth') === 'ok') {
+            loadEditor();
+        } else {
+            showPasswordGate();
+        }
     }
+}
+
+// SHA-256 hash of the admin password
+const ADMIN_HASH = 'a0f3285b07c26c0dcd2191447f391170d06b30f0577a41b72134c508ab0d04e0';
+
+async function hashPassword(pwd) {
+    const data = new TextEncoder().encode(pwd);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function showPasswordGate() {
+    app.innerHTML = `
+      <div class="password-gate">
+        <div class="gate-card">
+          <div class="gate-icon">🔒</div>
+          <h2>Acceso restringido</h2>
+          <p>Ingresá el código de acceso para crear tarjetas</p>
+          <form id="gate-form" autocomplete="off">
+            <input type="password" id="gate-password" placeholder="Código de acceso" autocomplete="off" required>
+            <div class="gate-error" id="gate-error" style="display:none;">Código incorrecto</div>
+            <button type="submit" class="btn btn-primary">Ingresar</button>
+          </form>
+          <div class="gate-footer">
+            <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">
+              ¿Querés tu tarjeta? Contactanos
+            </a>
+          </div>
+        </div>
+      </div>`;
+
+    document.getElementById('gate-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pwd = document.getElementById('gate-password').value;
+        const hash = await hashPassword(pwd);
+
+        if (hash === ADMIN_HASH) {
+            sessionStorage.setItem('editor_auth', 'ok');
+            loadEditor();
+        } else {
+            const errorEl = document.getElementById('gate-error');
+            errorEl.style.display = 'block';
+            document.getElementById('gate-password').value = '';
+            document.getElementById('gate-password').focus();
+        }
+    });
+}
+
+function loadEditor() {
+    const editorView = document.createElement('div');
+    editorView.className = 'view active';
+    app.appendChild(editorView);
+
+    import('./editor.js').then((mod) => {
+        window.__editorModule = mod;
+        mod.initEditor(editorView, (data) => {
+            window.__previewData = data;
+            navigateTo('/preview');
+        });
+    });
 }
 
 // Transform Supabase DB format → app display format
