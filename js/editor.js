@@ -13,7 +13,7 @@ const DEFAULT_DATA = {
   name: '',
   profession: '',
   description: '',
-  phone: '',
+  phone: '+54 ',
   email: '',
   location: '',
   instagram: '',
@@ -23,8 +23,9 @@ const DEFAULT_DATA = {
 };
 
 export function initEditor(container, onPreview) {
-  // Always start fresh (no localStorage)
-  let data = { ...DEFAULT_DATA };
+  // Persist data across gallery re-inits (adding/removing images calls initEditor again)
+  let data = container.__editorData || { ...DEFAULT_DATA };
+  container.__editorData = data;
 
   const coverPreviewStyle = data.coverPhoto
     ? `background-image: url('${data.coverPhoto}'); background-size: cover; background-position: center;`
