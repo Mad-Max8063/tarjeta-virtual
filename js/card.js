@@ -147,65 +147,65 @@ function buildCardHTML(data) {
 
   if (data.phone) {
     contactChips += `
-    < a href = "tel:${cleanPhone}" class="contact-chip stagger-${chipIndex++}" >
+      <a href="tel:${cleanPhone}" class="contact-chip stagger-${chipIndex++}">
         <div class="chip-icon phone">${ICONS.phone}</div>
         <div>
           <span class="chip-label">Teléfono</span>
           <span class="chip-value">${sanitize(data.phone)}</span>
           <span class="chip-action">Llamar ahora</span>
         </div>
-      </a > `;
+      </a>`;
   }
 
   if (data.email) {
     contactChips += `
-    < a href = "mailto:${sanitize(data.email)}" class="contact-chip stagger-${chipIndex++}" >
+      <a href="mailto:${sanitize(data.email)}" class="contact-chip stagger-${chipIndex++}">
         <div class="chip-icon email">${ICONS.email}</div>
         <div>
           <span class="chip-label">Email</span>
           <span class="chip-value">${sanitize(data.email)}</span>
           <span class="chip-action">Enviar correo</span>
         </div>
-      </a > `;
+      </a>`;
   }
 
   if (data.phone) {
     contactChips += `
-    < a href = "https://wa.me/${cleanPhone}" target = "_blank" rel = "noopener" class="contact-chip stagger-${chipIndex++}" >
+      <a href="https://wa.me/${cleanPhone}" target="_blank" rel="noopener" class="contact-chip stagger-${chipIndex++}">
         <div class="chip-icon whatsapp">${ICONS.whatsapp}</div>
         <div>
           <span class="chip-label">WhatsApp</span>
           <span class="chip-value">Enviar mensaje</span>
           <span class="chip-action">Mensaje directo</span>
         </div>
-      </a > `;
+      </a>`;
   }
 
   if (data.location) {
     contactChips += `
-    < div class="contact-chip stagger-${chipIndex++}" >
+      <div class="contact-chip stagger-${chipIndex++}">
         <div class="chip-icon location">${ICONS.location}</div>
         <div>
           <span class="chip-label">Ubicación</span>
           <span class="chip-value">${sanitize(data.location)}</span>
           <span class="chip-action">Ver en mapa</span>
         </div>
-      </div > `;
+      </div>`;
   }
 
   let socialLinks = '';
   if (data.instagram || data.linkedin || data.website) {
     let links = '';
     if (data.instagram) {
-      links += `< a href = "https://instagram.com/${data.instagram.replace('@', '')}" target = "_blank" rel = "noopener" class="social-link" title = "Instagram" > ${ICONS.instagram}</a > `;
+      links += `<a href="https://instagram.com/${data.instagram.replace('@', '')}" target="_blank" rel="noopener" class="social-link" title="Instagram">${ICONS.instagram}</a>`;
     }
     if (data.linkedin) {
-      links += `< a href = "${sanitize(data.linkedin)}" target = "_blank" rel = "noopener" class="social-link" title = "LinkedIn" > ${ICONS.linkedin}</a > `;
+      links += `<a href="${sanitize(data.linkedin)}" target="_blank" rel="noopener" class="social-link" title="LinkedIn">${ICONS.linkedin}</a>`;
     }
     if (data.website) {
-      links += `< a href = "${sanitize(data.website)}" target = "_blank" rel = "noopener" class="social-link" title = "Sitio web" > ${ICONS.website}</a > `;
+      links += `<a href="${sanitize(data.website)}" target="_blank" rel="noopener" class="social-link" title="Sitio web">${ICONS.website}</a>`;
     }
-    socialLinks = `< div class="social-links" > ${links}</div > `;
+    socialLinks = `<div class="social-links">${links}</div>`;
   }
 
   // Allow data: URIs, Supabase Storage URLs, and local assets for cover photo
@@ -216,7 +216,7 @@ function buildCardHTML(data) {
   ) ? data.coverPhoto : '';
 
   const coverStyle = safeCover
-    ? `background - image: url('${safeCover}'); background - size: cover; background - position: center; `
+    ? `background-image: url('${safeCover}'); background-size: cover; background-position: center;`
     : '';
 
   // Hero mode: no avatar + has cover = expanded banner with name overlay
@@ -231,12 +231,12 @@ function buildCardHTML(data) {
   let gallerySection = '';
   if (gallery.length > 0) {
     const galleryItems = gallery.map((item, i) => {
-      const caption = item.caption ? `< div class="gallery-caption" > ${sanitize(item.caption)}</div > ` : '';
-      return `< div class="gallery-item" > <img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}" loading="lazy">${caption}</div>`;
+      const caption = item.caption ? `<div class="gallery-caption">${sanitize(item.caption)}</div>` : '';
+      return `<div class="gallery-item"><img src="${item.src}" alt="${item.caption || 'Trabajo ' + (i + 1)}" loading="lazy">${caption}</div>`;
     }).join('');
 
     gallerySection = `
-    < div class="gallery-section" >
+      <div class="gallery-section">
         <button type="button" class="gallery-toggle" id="gallery-toggle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -253,14 +253,13 @@ function buildCardHTML(data) {
             ${galleryItems}
           </div>
         </div>
-      </div >
-    `;
+      </div>`;
   }
 
   // Hero mode: name overlay on banner, no avatar shown
   if (isHero) {
     return `
-    < div class="${cardClass}" >
+    <div class="${cardClass}">
       <div class="${coverClass}" style="${coverStyle}">
         <div class="hero-overlay">
           <h2 class="hero-name">${sanitize(data.name)}</h2>
@@ -284,13 +283,12 @@ function buildCardHTML(data) {
 
         ${gallerySection}
       </div>
-    </div >
-    `;
+    </div>`;
   }
 
   // Normal mode with avatar
   return `
-    < div class="${cardClass}" >
+    <div class="${cardClass}">
       <div class="${coverClass}" style="${coverStyle}"></div>
       <div class="card-avatar">
         <img src="${avatarSrc}" alt="${sanitize(data.name)}">
@@ -314,8 +312,7 @@ function buildCardHTML(data) {
 
         ${gallerySection}
       </div>
-    </div >
-    `;
+    </div>`;
 }
 
 function showToast(message) {
