@@ -182,15 +182,16 @@ function buildCardHTML(data) {
   }
 
   if (data.location) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.location)}`;
     contactChips += `
-      <div class="contact-chip stagger-${chipIndex++}">
+      <a href="${mapsUrl}" target="_blank" rel="noopener" class="contact-chip stagger-${chipIndex++}">
         <div class="chip-icon location">${ICONS.location}</div>
         <div>
           <span class="chip-label">Ubicación</span>
           <span class="chip-value">${sanitize(data.location)}</span>
           <span class="chip-action">Ver en mapa</span>
         </div>
-      </div>`;
+      </a>`;
   }
 
   let socialLinks = '';
