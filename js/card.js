@@ -270,9 +270,9 @@ function buildCardHTML(data) {
       <div class="card-body">
         ${data.description ? `<p class="card-description">${sanitize(data.description)}</p>` : ''}
         ${data.location ? `
-          <div class="card-location">
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.location)}" target="_blank" rel="noopener" class="card-location">
             ${ICONS.location} ${sanitize(data.location)}
-          </div>` : ''}
+          </a>` : ''}
 
         <div class="divider"></div>
 
@@ -299,9 +299,9 @@ function buildCardHTML(data) {
         <p class="card-profession">${sanitize(data.profession)}</p>
         ${data.description ? `<p class="card-description">${sanitize(data.description)}</p>` : ''}
         ${data.location ? `
-          <div class="card-location">
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.location)}" target="_blank" rel="noopener" class="card-location">
             ${ICONS.location} ${sanitize(data.location)}
-          </div>` : ''}
+          </a>` : ''}
 
         <div class="divider"></div>
 

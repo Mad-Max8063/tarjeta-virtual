@@ -827,6 +827,13 @@ body::before {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.card-location:hover {
+  color: var(--accent-mid);
 }
 
 .card-location svg {
