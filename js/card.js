@@ -110,7 +110,8 @@ export function renderLanding(container, data) {
     </div>
 
     <div class="landing-footer">
-      Creado por <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">Max Devs Solutions</a>
+      <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener" class="footer-brand">Max Devs Solutions</a>
+      <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener" class="footer-cta">✨ ¡Solicitá la tuya!</a>
     </div>
   </div>
   `;
