@@ -20,6 +20,7 @@ const ICONS = {
   share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
 };
 
 export function renderPreview(container, data, onEdit, onShare) {
@@ -96,12 +97,50 @@ export function renderLanding(container, data) {
     ${buildCardHTML(data)}
 
   <div style="padding: 0 4px;">
-    <!-- Save Contact -->
+    <!-- Booking CTA (if has booking URL) -->
+    ${data.bookingUrl ? `
     <div class="btn-group" style="margin-top: 24px;">
+      <a href="${sanitize(data.bookingUrl)}" target="_blank" rel="noopener" class="btn btn-booking" id="btn-booking">
+        ${ICONS.calendar}
+        Sacá tu turno
+      </a>
+    </div>
+    ` : ''}
+
+    <!-- Save Contact -->
+    <div class="btn-group" style="margin-top: ${data.bookingUrl ? '12px' : '24px'};">
       <button class="btn btn-save-contact" id="btn-save-contact">
         ${ICONS.save}
         Guardar contacto
       </button>
+    </div>
+
+    <!-- Contact Save Confirmation Modal -->
+    <div class="save-modal-overlay" id="save-modal-overlay">
+      <div class="save-modal">
+        <div class="save-modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+        </div>
+        <h3 class="save-modal-title">Guardar a <strong>${sanitize(data.name)}</strong></h3>
+        <p class="save-modal-subtitle">Se descargará un archivo de contacto (.vcf) que podés abrir para agregarlo a tu agenda</p>
+        <div class="save-modal-info">
+          <span>📱 ${sanitize(data.name)}</span>
+          <span>💼 ${sanitize(data.profession)}</span>
+          ${data.phone ? `<span>📞 ${sanitize(data.phone)}</span>` : ''}
+        </div>
+        <div class="save-modal-actions">
+          <button class="btn btn-save-confirm" id="btn-save-confirm">
+            ${ICONS.save}
+            Sí, guardar contacto
+          </button>
+          <button class="btn btn-save-cancel" id="btn-save-cancel">Cancelar</button>
+        </div>
+      </div>
     </div>
 
     <div class="save-success" id="save-success">
@@ -116,15 +155,34 @@ export function renderLanding(container, data) {
   </div>
   `;
 
-  // Save contact button
+  // Save contact button → show modal instead of downloading directly
   container.querySelector('#btn-save-contact').addEventListener('click', () => {
-    downloadVCard(data);
+    const overlay = container.querySelector('#save-modal-overlay');
+    overlay.classList.add('show');
+  });
 
-    // Show success state
+  // Modal confirm → download vCard
+  container.querySelector('#btn-save-confirm').addEventListener('click', () => {
+    downloadVCard(data);
+    const overlay = container.querySelector('#save-modal-overlay');
+    overlay.classList.remove('show');
     const btn = container.querySelector('#btn-save-contact');
     const success = container.querySelector('#save-success');
     btn.style.display = 'none';
     success.classList.add('show');
+  });
+
+  // Modal cancel
+  container.querySelector('#btn-save-cancel').addEventListener('click', () => {
+    const overlay = container.querySelector('#save-modal-overlay');
+    overlay.classList.remove('show');
+  });
+
+  // Click outside modal to close
+  container.querySelector('#save-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.remove('show');
+    }
   });
 
   wireGalleryToggle(container);
@@ -210,6 +268,20 @@ function buildCardHTML(data) {
     socialLinks = `<div class="social-links">${links}</div>`;
   }
 
+  // Booking button (only if bookingUrl is set)
+  let bookingChip = '';
+  if (data.bookingUrl) {
+    bookingChip = `
+      <a href="${sanitize(data.bookingUrl)}" target="_blank" rel="noopener" class="contact-chip booking-chip stagger-${chipIndex++}">
+        <div class="chip-icon booking">${ICONS.calendar}</div>
+        <div>
+          <span class="chip-label">Turnos</span>
+          <span class="chip-value">Reservá tu turno online</span>
+          <span class="chip-action">Sacar turno</span>
+        </div>
+      </a>`;
+  }
+
   // Allow data: URIs, Supabase Storage URLs, and local assets for cover photo
   const safeCover = data.coverPhoto && (
     data.coverPhoto.startsWith('data:image/') ||
@@ -279,6 +351,7 @@ function buildCardHTML(data) {
 
         <div class="contact-chips">
           ${contactChips}
+          ${bookingChip}
         </div>
 
         ${socialLinks}
@@ -308,6 +381,7 @@ function buildCardHTML(data) {
 
         <div class="contact-chips">
           ${contactChips}
+          ${bookingChip}
         </div>
 
         ${socialLinks}

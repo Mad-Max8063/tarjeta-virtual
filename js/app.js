@@ -189,6 +189,7 @@ function dbToAppFormat(card) {
         instagram: card.instagram,
         linkedin: card.linkedin,
         website: card.website,
+        bookingUrl: card.booking_url || '',
         // Convert gallery_images to app format
         gallery: (card.gallery_images || []).map(img => ({
             src: img.image_url,

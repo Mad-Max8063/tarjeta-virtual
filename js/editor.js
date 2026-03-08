@@ -5,7 +5,7 @@
 import { resizeImage, resizeBanner, resizeGalleryImage, dataUriToFile } from './utils.js';
 import { createCard, updateCard, uploadImage } from './supabase.js';
 
-const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website'];
+const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website', 'bookingUrl'];
 const MAX_DESC = 160;
 
 // Default empty data (no demo info)
@@ -19,7 +19,8 @@ const DEFAULT_DATA = {
   instagram: '',
   linkedin: '',
   website: '',
-  coverPhoto: ''
+  coverPhoto: '',
+  bookingUrl: ''
 };
 
 export function initEditor(container, onPreview) {
@@ -139,6 +140,19 @@ export function initEditor(container, onPreview) {
           <div class="form-group">
             <label>Sitio web</label>
             <input type="url" id="field-website" placeholder="https://tuportfolio.com" value="${data.website || ''}">
+          </div>
+        </div>
+      </div>
+
+      <!-- Link de Turnos -->
+      <div class="glass-card">
+        <div class="form-section">
+          <div class="section-label">📅 Link de turnos (opcional)</div>
+          <p class="section-hint">Si tenés un sistema de turnos, pegá el link acá. Aparecerá un botón "Sacá tu turno" en tu tarjeta.</p>
+
+          <div class="form-group">
+            <label>URL de reserva</label>
+            <input type="url" id="field-bookingUrl" placeholder="https://gestor-de-turnos.pages.dev/#/tu-negocio/booking" value="${data.bookingUrl || ''}">
           </div>
         </div>
       </div>
@@ -281,6 +295,7 @@ export function initEditor(container, onPreview) {
         instagram: data.instagram,
         linkedin: data.linkedin,
         website: data.website,
+        booking_url: data.bookingUrl,
         photo_url: '',
         cover_url: '',
       });

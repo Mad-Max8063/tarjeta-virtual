@@ -910,6 +910,21 @@ body::before {
   color: #f59e0b;
 }
 
+.chip-icon.booking {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--accent-start);
+}
+
+.booking-chip {
+  border-color: rgba(124, 58, 237, 0.25) !important;
+  background: rgba(124, 58, 237, 0.06) !important;
+}
+
+.booking-chip:hover {
+  border-color: var(--accent-start) !important;
+  background: rgba(124, 58, 237, 0.12) !important;
+}
+
 .contact-chip .chip-label {
   font-size: 0.7rem;
   color: var(--text-muted);
@@ -1711,4 +1726,222 @@ body::before {
   color: var(--success);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+/* ---------- Booking CTA Button ---------- */
+.btn-booking {
+  width: 100%;
+  background: linear-gradient(135deg, #7c3aed, #6366f1, #3b82f6);
+  color: white;
+  padding: 18px 24px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.35);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  animation: bookingPulse 2.5s ease-in-out infinite;
+}
+
+.btn-booking::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  z-index: -1;
+  filter: blur(14px);
+  opacity: 0.5;
+}
+
+.btn-booking::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+      transparent, rgba(255, 255, 255, 0.15), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 2.5s infinite;
+}
+
+@keyframes bookingPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.35);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 50px rgba(124, 58, 237, 0.5), 0 0 80px rgba(59, 130, 246, 0.2);
+    transform: scale(1.01);
+  }
+}
+
+.btn-booking:hover {
+  animation: none;
+  box-shadow: 0 0 50px rgba(124, 58, 237, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-booking:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Contact Save Confirmation Modal ---------- */
+.save-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.save-modal-overlay.show {
+  display: flex;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.save-modal {
+  background: var(--bg-card);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 32px 24px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(124, 58, 237, 0.15);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.save-modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-gradient-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--accent-start);
+}
+
+.save-modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.save-modal-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.save-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.save-modal-info span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.save-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-save-confirm {
+  width: 100%;
+  background: var(--accent-gradient);
+  color: white;
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-save-confirm svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-save-confirm:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-glow-strong);
+}
+
+.btn-save-confirm:active {
+  transform: scale(0.97);
+}
+
+.btn-save-cancel {
+  width: 100%;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 12px 24px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--bg-hover);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.btn-save-cancel:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-save-cancel:active {
+  transform: scale(0.97);
 }

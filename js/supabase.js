@@ -49,6 +49,7 @@ export async function createCard(data) {
             instagram: data.instagram || '',
             linkedin: data.linkedin || '',
             website: data.website || '',
+            booking_url: data.booking_url || '',
         })
         .select()
         .single();
