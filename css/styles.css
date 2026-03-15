@@ -1947,6 +1947,28 @@ body::before {
 }
 
 /* ---------- Promo Footer (non-premium cards) ---------- */
+/* Detect booking URL button */
+.btn-detect {
+  padding: 8px 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+.btn-detect:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.btn-detect:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .promo-footer {
   text-align: center;
   padding: 24px 16px 20px;

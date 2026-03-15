@@ -183,6 +183,10 @@ export async function getGalleryImages(cardId) {
     return data || [];
 }
 
+export function getSupabaseClient() {
+    return getClient();
+}
+
 export async function updateGalleryCaption(imageId, caption) {
     const db = getClient();
     const { error } = await db

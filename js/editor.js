@@ -3,7 +3,7 @@
 // ============================================
 
 import { resizeImage, resizeBanner, resizeGalleryImage, dataUriToFile } from './utils.js';
-import { createCard, updateCard, uploadImage } from './supabase.js';
+import { createCard, updateCard, uploadImage, getSupabaseClient } from './supabase.js';
 
 const FIELDS = ['name', 'profession', 'description', 'phone', 'email', 'location', 'instagram', 'linkedin', 'website', 'bookingUrl'];
 const MAX_DESC = 160;
@@ -148,11 +148,17 @@ export function initEditor(container, onPreview) {
       <div class="glass-card">
         <div class="form-section">
           <div class="section-label">📅 Link de turnos (opcional)</div>
-          <p class="section-hint">Si tenés un sistema de turnos, pegá el link acá. Aparecerá un botón "Sacá tu turno" en tu tarjeta.</p>
+          <p class="section-hint">Si usás nuestro Gestor de Turnos, tocá "Detectar" para conectarlo automáticamente.</p>
 
           <div class="form-group">
             <label>URL de reserva</label>
-            <input type="url" id="field-bookingUrl" placeholder="https://gestor-de-turnos.pages.dev/#/tu-negocio/booking" value="${data.bookingUrl || ''}">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="url" id="field-bookingUrl" placeholder="https://gestor-de-turnos.pages.dev/#/tu-negocio/booking" value="${data.bookingUrl || ''}" style="flex: 1;">
+              <button type="button" id="btn-detect-booking" class="btn-detect" title="Detectar link de turnos automáticamente">
+                🔍 Detectar
+              </button>
+            </div>
+            <div id="booking-status" style="margin-top: 6px; font-size: 0.75rem;"></div>
           </div>
         </div>
       </div>
@@ -267,6 +273,63 @@ export function initEditor(container, onPreview) {
       }
     });
   });
+
+  // Detect booking URL from Gestor de Turnos
+  const detectBtn = container.querySelector('#btn-detect-booking');
+  const bookingStatus = container.querySelector('#booking-status');
+  if (detectBtn) {
+    detectBtn.addEventListener('click', async () => {
+      detectBtn.disabled = true;
+      detectBtn.textContent = '⏳';
+      bookingStatus.textContent = 'Buscando...';
+      bookingStatus.style.color = '#6b7280';
+
+      try {
+        // Try to find a business by matching the card name to a slug
+        const nameSlug = (data.name || '').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+
+        if (!nameSlug) {
+          bookingStatus.innerHTML = '⚠️ Completá el nombre primero';
+          bookingStatus.style.color = '#f59e0b';
+          detectBtn.disabled = false;
+          detectBtn.textContent = '🔍 Detectar';
+          return;
+        }
+
+        // Search for matching business in Supabase
+        const sb = getSupabaseClient();
+        const { data: businesses } = await sb
+          .from('businesses')
+          .select('slug, nombre_negocio')
+          .or(`slug.eq.${nameSlug},nombre_negocio.ilike.%${data.name}%`)
+          .limit(5);
+
+        if (businesses && businesses.length > 0) {
+          const match = businesses[0];
+          const bookingUrl = `https://gestor-de-turnos.pages.dev/#/${match.slug}/booking`;
+          const bookingInput = container.querySelector('#field-bookingUrl');
+          bookingInput.value = bookingUrl;
+          data.bookingUrl = bookingUrl;
+          bookingStatus.innerHTML = `✅ Conectado con <strong>${match.nombre_negocio}</strong>`;
+          bookingStatus.style.color = '#22c55e';
+        } else {
+          bookingStatus.innerHTML = '❌ No se encontró un Gestor de Turnos vinculado. <a href="https://gestor-de-turnos.pages.dev/#/register" target="_blank" style="color: #8b5cf6;">Crear cuenta →</a>';
+          bookingStatus.style.color = '#ef4444';
+        }
+      } catch (err) {
+        bookingStatus.textContent = '⚠️ Error al buscar. Podés pegar el link manualmente.';
+        bookingStatus.style.color = '#f59e0b';
+      }
+
+      detectBtn.disabled = false;
+      detectBtn.textContent = '🔍 Detectar';
+    });
+  }
 
   // Form submit → save to Supabase → preview
   const form = container.querySelector('#editor-form');
