@@ -195,6 +195,7 @@ function dbToAppFormat(card) {
             src: img.image_url,
             caption: img.caption || '',
         })),
+        isPremium: card.is_premium || false,
         // DB-specific fields
         _id: card.id,
         _editToken: card.edit_token,

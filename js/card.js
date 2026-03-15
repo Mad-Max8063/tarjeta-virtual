@@ -148,10 +148,12 @@ export function renderLanding(container, data) {
       <p>¡Contacto descargado!<br>Abrilo para guardar en tu agenda</p>
     </div>
 
-    <div class="landing-footer">
-      <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener" class="footer-brand">Max Devs Solutions</a>
-      <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener" class="footer-cta">✨ ¡Solicitá la tuya!</a>
-    </div>
+    ${!data.isPremium ? `
+    <div class="promo-footer">
+      <a href="https://wa.me/5491162621406?text=${encodeURIComponent('Hola! Quiero mi tarjeta virtual profesional')}" target="_blank" rel="noopener">
+        ¿Te gusta esta card? · Solicitá la tuya a <strong>Max Devs Solutions</strong>
+      </a>
+    </div>` : ''}
   </div>
   `;
 

@@ -1945,3 +1945,35 @@ body::before {
 .btn-save-cancel:active {
   transform: scale(0.97);
 }
+
+/* ---------- Promo Footer (non-premium cards) ---------- */
+.promo-footer {
+  text-align: center;
+  padding: 24px 16px 20px;
+  opacity: 0.4;
+  transition: opacity var(--transition-normal);
+}
+
+.promo-footer:hover {
+  opacity: 0.7;
+}
+
+.promo-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.62rem;
+  letter-spacing: 0.3px;
+  transition: color var(--transition-fast);
+}
+
+.promo-footer a strong {
+  font-weight: 600;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.promo-footer a:hover {
+  color: var(--text-secondary);
+}
