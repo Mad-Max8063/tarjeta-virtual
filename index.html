@@ -28,6 +28,18 @@
 </head>
 
 <body>
+  <!-- PWA redirect: if opened from home screen (/) and has a saved card, go there instantly -->
+  <script>
+    (function() {
+      if (window.location.pathname === '/' && !window.location.search) {
+        var saved = localStorage.getItem('last_card_url');
+        if (saved) {
+          window.location.replace(saved);
+        }
+      }
+    })();
+  </script>
+
   <div id="app" class="app-container"></div>
 
   <!-- Supabase JS Client -->

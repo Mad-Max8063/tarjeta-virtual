@@ -2,11 +2,9 @@
 // Service Worker — Cache strategy for PWA
 // ============================================
 
-const CACHE_NAME = 'virtual-card-v4';
+const CACHE_NAME = 'virtual-card-v5';
 
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
   '/css/styles.css',
   '/js/app.js',
   '/js/card.js',
@@ -40,14 +38,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API calls, cache-first for static assets
+// Fetch strategy
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Network-first for Supabase API calls and external resources
+  // Network-first for external resources (Supabase, CDN, etc.)
   if (url.hostname !== location.hostname) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
@@ -55,11 +53,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for local static assets
+  // NETWORK-FIRST for navigation (HTML pages) — always get fresh HTML
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request) || caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for static assets (JS, CSS, images)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request).then((response) => {
-        // Update cache with fresh version
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
