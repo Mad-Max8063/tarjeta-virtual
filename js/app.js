@@ -59,6 +59,8 @@ function navigate() {
     } else if (cardMatch) {
         // — Landing mode: fetch card from Supabase (fullscreen) —
         const cardId = cardMatch[1];
+        // Remember this card for PWA home screen launch
+        localStorage.setItem('last_card_url', `/card/${cardId}`);
         app.classList.add('landing-mode');
 
         app.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Cargando tarjeta...</p></div>';
@@ -109,6 +111,12 @@ function navigate() {
         if (sessionStorage.getItem('editor_auth') === 'ok') {
             loadEditor();
         } else {
+            // If user has a saved card (PWA opened from home screen), go to it
+            const lastCard = localStorage.getItem('last_card_url');
+            if (lastCard) {
+                navigateTo(lastCard);
+                return;
+            }
             showPasswordGate();
         }
     }
