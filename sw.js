@@ -2,7 +2,7 @@
 // Service Worker — Cache strategy for PWA
 // ============================================
 
-const CACHE_NAME = 'virtual-card-v2';
+const CACHE_NAME = 'virtual-card-v3';
 
 const PRECACHE_URLS = [
   '/',

@@ -24,6 +24,8 @@ function navigate() {
         const cardId = editMatch[1];
         const params = new URLSearchParams(search);
         const token = params.get('token') || '';
+        // Remember this card for PWA home screen launch
+        localStorage.setItem('last_card_url', `/card/${cardId}`);
 
         app.innerHTML = '<div class="loading-screen"><div class="spinner"></div><p>Cargando...</p></div>';
 
